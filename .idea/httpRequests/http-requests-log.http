@@ -1,0 +1,24 @@
+GET http://localhost:8080/ws
+
+<> 2022-11-22T132936.200.txt
+
+###
+
+GET http://localhost:8080/ws
+
+<> 2022-11-22T132924.200.txt
+
+###
+
+GET http://localhost:8080
+
+<> 2022-11-22T132910.200.txt
+
+###
+
+GET http://localhost/data-service/api/v1/streams/2664?start=1645920000000&end=1648512000000
+
+<> 2022-11-22T100853.200.txt
+
+###
+

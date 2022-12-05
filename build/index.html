@@ -1,0 +1,147 @@
+<html>
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1.0" />    
+    <!-- import CSS -->
+    <link rel="stylesheet" href="https://cdn.bootcdn.net/ajax/libs/element-plus/2.2.22/index.css">
+
+    <title>OpenCvDemo</title>
+  </head>
+  <body>
+    <div id="app">
+      <div class="common-layout" style="width: 100%">
+        <el-slider v-model="imgwidth"></el-slider>
+        <el-container>
+          <el-aside :width="imgwidth+'%'">
+            <img style="width: 100%"  v-bind:src="base64img">
+          </el-aside>
+          <el-main>
+            <el-tabs  style="height: 500px" class="demo-tabs">
+              <el-tab-pane label="加载图片">加载图片:
+                <el-input v-model="config.demo"></el-input>
+                <el-button @click="RefreshPicture('load')">加载图片</el-button>
+              </el-tab-pane>
+              <el-tab-pane label="灰度">
+                <el-button @click="RefreshPicture('gray')">灰度</el-button>
+              </el-tab-pane>
+              <el-tab-pane label="二值化">
+                <div>颜色大于该值(设定像素阈值)
+                  <input placeholder="请输入0-255" v-model="config.threshold.thresh" type="number"/>
+                </div>
+                <div>要处理成的最大值
+                  <input placeholder="请输入0-255" v-model="config.threshold.maxvalue" type="number"/>
+                </div>
+                <el-select v-model="config.threshold.threshold_type" placeholder="Select">
+                  <el-option
+                          v-for="item in threshold_type"
+                          :key="item.value"
+                          :label="item.label"
+                          :value="item.value"
+                  />
+                </el-select>
+                <el-button @click="RefreshPicture('binary')">二值化</el-button>
+              </el-tab-pane>
+              <el-tab-pane label="最大选择">
+                <input placeholder="请输入要选择第几大的白色" v-model="config.contour_index" type="number"/>
+                <div>0表示最大的面积,1表示第二大的面积</div>
+                <el-button @click="RefreshPicture('ContourArea')">最大选择(选择白色)</el-button>
+              </el-tab-pane>
+              <el-tab-pane label="最大面积转矩形">
+                <el-button @click="RefreshPicture('MinAreaRect')">最大面积转矩形</el-button>
+              </el-tab-pane>
+              <el-tab-pane label="剪切图片">
+                <el-button @click="RefreshPicture('crop')">剪切图片</el-button>
+              </el-tab-pane>
+              <el-tab-pane label="批量">
+                <el-input v-model="config.dir"></el-input>
+                <el-button @click="batch">批量裁剪</el-button>
+                <el-timeline>
+                  <el-timeline-item
+                          v-for="(activity, index) in activities"
+                          :key="index"
+                          :color="getColor(activity.statu)"
+                  >
+                    {{ activity.path }}
+                  </el-timeline-item>
+                </el-timeline>
+              </el-tab-pane>
+            </el-tabs>
+          </el-main>
+        </el-container>
+      </div>
+
+    </div>
+    <!-- import JavaScript -->
+	<script src="https://cdn.bootcdn.net/ajax/libs/vue/3.2.45/vue.global.min.js"></script>
+    <script src="https://cdn.bootcdn.net/ajax/libs/element-plus/2.2.25/index.full.min.js"></script>
+    <script src="https://cdn.bootcdn.net/ajax/libs/axios/1.1.3/axios.min.js"></script>
+    <script>
+      const App = {
+        data() {
+          return {
+            imgwidth: 25,
+            activities:[{}],
+            base64img: 'data:image/jpeg;base64,',
+            threshold_type: [{label:"ThresholdBinary(大于阈值的变成设置的最大值，小于它的变成最小值（0）",value:0 },
+              {label:"ThresholdBinaryInv(大于它的变成最小值，小于它的变成最大值)",value:1 },
+              {label:"ThresholdTrunc(大于它的变成阈值，小于它的不变)",value:2 },
+              {label:"ThresholdToZero(大于它的变为0，小于它的不变)",value:3 },
+              {label:"ThresholdToZeroInv(小于它的变为0，大于它的不变)",value:4 },
+              {label:"ThresholdMask",value:7 },
+              {label:"ThresholdOtsu",value:8 },
+              {label:"ThresholdTriangle",value:16}],
+            config: {demo: "./demo/demo.png", dir:"C:\\Users\\Administrator\\Desktop\\52", contour_index:0, threshold:{thresh:170, maxvalue:255, threshold_type:0}}
+          };
+        },
+        methods:{
+          getColor(statu){
+            if(statu){
+              return '#0bbd87'
+            }else{
+              return '#AABBCC'
+            }
+
+          },
+          RefreshPicture(stoken){
+            that = this
+            axios.post('http://localhost:8080/' + stoken, that.config)
+                    .then(function(response) {
+                      that.base64img = 'data:image/jpeg;base64,' + response.data;
+                    })
+                    .catch(function(error) {
+                      console.log(error);
+                    });
+          },
+          batch(){
+            that = this
+            axios.post('http://localhost:8080/batch', that.config)
+                    .then(function(response) {
+                    })
+                    .catch(function(error) {
+                      console.log(error);
+                    });
+            this.getstatu();
+          },
+          getstatu(){
+            that = this
+            console.log("getstatu");
+            axios.get('http://localhost:8080/getstatu', that.config)
+                    .then(function(response) {
+                      that.activities = response.data.f
+                      if(!response.data.statu){
+                        setTimeout(that.getstatu ,1000);
+                      }
+                    })
+                    .catch(function(error) {
+                      console.log(error);
+                    });
+          }
+        }
+      };
+      const app = Vue.createApp(App);
+      app.use(ElementPlus);
+      app.mount("#app");
+
+    </script>
+  </body>
+</html>
